@@ -1,27 +1,48 @@
 import { useState } from "react";
 import type { InterviewAnalysisResult } from "../types/analysis";
 
-function InterviewAnalysisPanel() {
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+interface Props {
+  file: File;
+}
+
+function InterviewAnalysisPanel({ file }: Props) {
   const [jobRole, setJobRole] = useState("");
   const [feedback, setFeedback] = useState("");
   const [result, setResult] = useState<InterviewAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleAnalyze() {
+  async function handleAnalyze() {
     setLoading(true);
-    setTimeout(() => {
-      setResult({
-        likelyFailure: "level_mismatch",
-        explanation:
-          "The job role appears to expect deeper experience than reflected in the resume. This suggests a role-level mismatch rather than lack of ability.",
-        suggestions: [
-          "Target entry or junior roles with similar tech stack",
-          "Strengthen depth in one core skill instead of listing many tools",
-          "Gain hands-on experience through complex projects",
-        ],
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("analysisType", "interview");
+      if (jobRole.trim()) formData.append("jobRole", jobRole.trim());
+      if (feedback.trim()) formData.append("feedback", feedback.trim());
+
+      const res = await fetch(`${API_URL}/api/analyze`, {
+        method: "POST",
+        body: formData,
       });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        setError(json.error || "Analysis failed");
+        return;
+      }
+
+      setResult(json.data as InterviewAnalysisResult);
+    } catch (err) {
+      setError("Failed to connect to server. Make sure the backend is running.");
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
@@ -62,34 +83,37 @@ function InterviewAnalysisPanel() {
         </button>
       </div>
 
+      {error && (
+        <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
+
       {result && (
-        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold uppercase tracking-wide">
-              {result.likelyFailure.replace("_", " ")}
-            </span>
-          </div>
-
-          <p className="text-gray-600 text-sm leading-relaxed">
-            {result.explanation}
-          </p>
-
-          <div>
-            <h4 className="text-sm font-semibold text-gray-800 mb-2">
-              Suggestions
-            </h4>
-            <ul className="space-y-2">
-              {result.suggestions.map((s, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-sm text-gray-600"
-                >
-                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mt-8 space-y-4">
+          {(["screening", "technical", "behavioral"] as const).map((stage) => (
+            <div
+              key={stage}
+              className="rounded-xl border border-gray-200 bg-white p-6 space-y-3"
+            >
+              <h3 className="text-sm font-semibold text-gray-800 capitalize">
+                {stage} Stage
+              </h3>
+              <ul className="space-y-3">
+                {result[stage].map((point, i) => (
+                  <li key={i} className="space-y-1">
+                    <p className="text-sm font-medium text-red-700 flex items-start gap-2">
+                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                      {point.reason}
+                    </p>
+                    <p className="text-sm text-gray-600 ml-3.5">
+                      {point.advice}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       )}
     </div>

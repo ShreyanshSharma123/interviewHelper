@@ -1,22 +1,45 @@
-export interface ScoreBreakdown {
+export interface ScoreComponent {
   score: number;
-  reasons: string[];
+  explanation: string;
+}
+
+export interface AtsResult {
+  keywordMatch: ScoreComponent;
+  relevance: ScoreComponent;
+  formatting: ScoreComponent;
+  overall: ScoreComponent;
+  suggestions: string[];
+}
+
+export interface HumanResult {
+  clarity: ScoreComponent;
+  impact: ScoreComponent;
+  layout: ScoreComponent;
+  overall: ScoreComponent;
+  suggestions: string[];
 }
 
 export interface AtsHumanAnalysis {
-  atsScore: ScoreBreakdown;
-  humanScore: ScoreBreakdown;
-  conflicts: string[];
+  ats: AtsResult;
+  human: HumanResult;
 }
 
-export type FailureReason =
-  | "skill_gap"
-  | "level_mismatch"
-  | "communication"
-  | "expectation";
+export type JobLevel = "entry" | "mid" | "senior";
+
+export interface InterviewFailurePoint {
+  reason: string;
+  advice: string;
+}
 
 export interface InterviewAnalysisResult {
-  likelyFailure: FailureReason;
+  screening: InterviewFailurePoint[];
+  technical: InterviewFailurePoint[];
+  behavioral: InterviewFailurePoint[];
+}
+
+export interface RealityCheckResult {
+  inferredLevel: string;
+  verdict: "Ready" | "Stretching" | "Not Ready";
   explanation: string;
-  suggestions: string[];
+  nextSteps: string[];
 }

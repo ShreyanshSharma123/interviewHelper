@@ -59,9 +59,9 @@ function App() {
             >
               ← Back to options
             </button>
-            {mode === "ats" && <AtsVsHumanPanel />}
-            {mode === "interview" && <InterviewAnalysisPanel />}
-            {mode === "reality" && <RealityCheckPanel />}
+            {mode === "ats" && <AtsVsHumanPanel file={file} />}
+            {mode === "interview" && <InterviewAnalysisPanel file={file} />}
+            {mode === "reality" && <RealityCheckPanel file={file} />}
           </section>
         )}
       </main>

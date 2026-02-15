@@ -1,19 +1,48 @@
 import { useState } from "react";
-import type { JobLevel } from "../types/job";
+import type { RealityCheckResult } from "../types/analysis";
 
-function RealityCheckPanel() {
+type JobLevel = "entry" | "mid" | "senior";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+interface Props {
+  file: File;
+}
+
+function RealityCheckPanel({ file }: Props) {
   const [roleLevel, setRoleLevel] = useState<JobLevel>("entry");
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<RealityCheckResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleCheck() {
+  async function handleCheck() {
     setLoading(true);
-    setTimeout(() => {
-      setResult(
-        "Your profile aligns well with entry-level roles. Applying to mid-level roles may result in rejections due to experience expectations rather than skill gaps."
-      );
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("analysisType", "reality");
+      formData.append("targetLevel", roleLevel);
+
+      const res = await fetch(`${API_URL}/api/analyze`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        setError(json.error || "Analysis failed");
+        return;
+      }
+
+      setResult(json.data as RealityCheckResult);
+    } catch (err) {
+      setError("Failed to connect to server. Make sure the backend is running.");
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
@@ -47,25 +76,68 @@ function RealityCheckPanel() {
         </button>
       </div>
 
+      {error && (
+        <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
+
       {result && (
-        <div className="mt-8 rounded-xl border border-emerald-100 bg-emerald-50/50 p-6">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-5 h-5 text-emerald-500 mt-0.5 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="mt-8 space-y-4">
+          <div
+            className={`rounded-xl border p-6 ${
+              result.verdict === "Ready"
+                ? "border-emerald-100 bg-emerald-50/50"
+                : result.verdict === "Stretching"
+                ? "border-amber-100 bg-amber-50/50"
+                : "border-red-100 bg-red-50/50"
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ${
+                  result.verdict === "Ready"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : result.verdict === "Stretching"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+              >
+                {result.verdict}
+              </span>
+              <span className="text-xs text-gray-500">
+                Inferred: {result.inferredLevel}
+              </span>
+            </div>
+
+            <p
+              className={`text-sm leading-relaxed ${
+                result.verdict === "Ready"
+                  ? "text-emerald-800"
+                  : result.verdict === "Stretching"
+                  ? "text-amber-800"
+                  : "text-red-800"
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-sm text-emerald-800 leading-relaxed">
-              {result}
+              {result.explanation}
             </p>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-white p-6 space-y-3">
+            <h4 className="text-sm font-semibold text-gray-800">
+              Realistic Next Steps
+            </h4>
+            <ul className="space-y-2">
+              {result.nextSteps.map((step, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-gray-600"
+                >
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                  {step}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       )}

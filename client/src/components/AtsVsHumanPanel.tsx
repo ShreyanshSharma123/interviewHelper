@@ -1,35 +1,44 @@
 import { useState } from "react";
 import type { AtsHumanAnalysis } from "../types/analysis";
 
-function AtsVsHumanPanel() {
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+interface Props {
+  file: File;
+}
+
+function AtsVsHumanPanel({ file }: Props) {
   const [analysis, setAnalysis] = useState<AtsHumanAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleAnalyze() {
+  async function handleAnalyze() {
     setLoading(true);
-    setTimeout(() => {
-      setAnalysis({
-        atsScore: {
-          score: 78,
-          reasons: [
-            "Relevant keywords found",
-            "Standard section headings detected",
-          ],
-        },
-        humanScore: {
-          score: 65,
-          reasons: [
-            "Bullets are too long",
-            "Limited quantified impact",
-          ],
-        },
-        conflicts: [
-          "Keyword-heavy skills section hurts readability",
-          "Dense formatting is ATS-friendly but hard to scan",
-        ],
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("analysisType", "ats");
+
+      const res = await fetch(`${API_URL}/api/analyze`, {
+        method: "POST",
+        body: formData,
       });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        setError(json.error || "Analysis failed");
+        return;
+      }
+
+      setAnalysis(json.data as AtsHumanAnalysis);
+    } catch (err) {
+      setError("Failed to connect to server. Make sure the backend is running.");
+      console.error(err);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   }
 
   return (
@@ -48,32 +57,44 @@ function AtsVsHumanPanel() {
         {loading ? "Analyzing..." : "Analyze Resume"}
       </button>
 
+      {error && (
+        <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+          {error}
+        </p>
+      )}
+
       {analysis && (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-          <ScoreCard
-            title="ATS Score"
-            score={analysis.atsScore.score}
-            reasons={analysis.atsScore.reasons}
-            color="emerald"
-          />
-          <ScoreCard
-            title="Human Readability"
-            score={analysis.humanScore.score}
-            reasons={analysis.humanScore.reasons}
-            color="amber"
-          />
-          <div className="sm:col-span-2 rounded-xl border border-red-100 bg-red-50/50 p-5">
-            <h3 className="font-semibold text-red-800 mb-3">
-              Optimization Conflicts
-            </h3>
-            <ul className="space-y-2">
-              {analysis.conflicts.map((c, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-red-700">
-                  <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                  {c}
-                </li>
-              ))}
-            </ul>
+        <div className="mt-8 space-y-6">
+          {/* Overall Scores */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ScoreCard
+              title="ATS Overall"
+              score={analysis.ats.overall.score}
+              explanation={analysis.ats.overall.explanation}
+              details={[
+                { label: "Keywords", score: analysis.ats.keywordMatch.score },
+                { label: "Relevance", score: analysis.ats.relevance.score },
+                { label: "Formatting", score: analysis.ats.formatting.score },
+              ]}
+              color="emerald"
+            />
+            <ScoreCard
+              title="Human Readability"
+              score={analysis.human.overall.score}
+              explanation={analysis.human.overall.explanation}
+              details={[
+                { label: "Clarity", score: analysis.human.clarity.score },
+                { label: "Impact", score: analysis.human.impact.score },
+                { label: "Layout", score: analysis.human.layout.score },
+              ]}
+              color="amber"
+            />
+          </div>
+
+          {/* Suggestions */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SuggestionList title="ATS Suggestions" items={analysis.ats.suggestions} color="emerald" />
+            <SuggestionList title="Recruiter Suggestions" items={analysis.human.suggestions} color="amber" />
           </div>
         </div>
       )}
@@ -84,12 +105,14 @@ function AtsVsHumanPanel() {
 function ScoreCard({
   title,
   score,
-  reasons,
+  explanation,
+  details,
   color,
 }: {
   title: string;
   score: number;
-  reasons: string[];
+  explanation: string;
+  details: { label: string; score: number }[];
   color: "emerald" | "amber";
 }) {
   const bg = color === "emerald" ? "bg-emerald-50/50" : "bg-amber-50/50";
@@ -98,7 +121,8 @@ function ScoreCard({
     color === "emerald"
       ? "bg-emerald-100 text-emerald-700"
       : "bg-amber-100 text-amber-700";
-  const dot = color === "emerald" ? "bg-emerald-400" : "bg-amber-400";
+  const barBg = color === "emerald" ? "bg-emerald-200" : "bg-amber-200";
+  const barFill = color === "emerald" ? "bg-emerald-500" : "bg-amber-500";
   const textColor = color === "emerald" ? "text-emerald-700" : "text-amber-700";
 
   return (
@@ -109,11 +133,50 @@ function ScoreCard({
           {score}
         </span>
       </div>
+      <p className="text-sm text-gray-600 mb-4">{explanation}</p>
+      <div className="space-y-2">
+        {details.map((d) => (
+          <div key={d.label}>
+            <div className="flex justify-between text-xs mb-1">
+              <span className={textColor}>{d.label}</span>
+              <span className={textColor}>{d.score}</span>
+            </div>
+            <div className={`h-1.5 rounded-full ${barBg}`}>
+              <div
+                className={`h-1.5 rounded-full ${barFill} transition-all`}
+                style={{ width: `${d.score}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SuggestionList({
+  title,
+  items,
+  color,
+}: {
+  title: string;
+  items: string[];
+  color: "emerald" | "amber";
+}) {
+  const bg = color === "emerald" ? "bg-emerald-50/50" : "bg-amber-50/50";
+  const border = color === "emerald" ? "border-emerald-100" : "border-amber-100";
+  const dot = color === "emerald" ? "bg-emerald-400" : "bg-amber-400";
+  const textColor = color === "emerald" ? "text-emerald-700" : "text-amber-700";
+  const heading = color === "emerald" ? "text-emerald-800" : "text-amber-800";
+
+  return (
+    <div className={`rounded-xl border ${border} ${bg} p-5`}>
+      <h3 className={`font-semibold ${heading} mb-3`}>{title}</h3>
       <ul className="space-y-2">
-        {reasons.map((r, i) => (
+        {items.map((item, i) => (
           <li key={i} className={`flex items-start gap-2 text-sm ${textColor}`}>
             <span className={`mt-1 w-1.5 h-1.5 rounded-full ${dot} shrink-0`} />
-            {r}
+            {item}
           </li>
         ))}
       </ul>
