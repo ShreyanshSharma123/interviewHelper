@@ -12,19 +12,8 @@ import type {
   AnalysisResponse,
 } from "../types/index.js";
 
-/**
- * POST /api/analyze
- *
- * Expects multipart/form-data with:
- *   - file: resume file (PDF, DOCX, or TXT)
- *   - analysisType: "ats" | "interview" | "reality"
- *   - jobRole? : string  (for interview analysis)
- *   - feedback? : string (for interview analysis)
- *   - targetLevel? : "entry" | "mid" | "senior" (for reality check)
- */
 export async function handleAnalysis(req: Request & { file?: Express.Multer.File }, res: Response) {
   try {
-    // ── Validate file ──
     const file = req.file;
     if (!file) {
       res.status(400).json({
@@ -34,7 +23,6 @@ export async function handleAnalysis(req: Request & { file?: Express.Multer.File
       return;
     }
 
-    // ── Validate analysis type ──
     const analysisType = req.body.analysisType as AnalysisType;
     if (!analysisType || !["ats", "interview", "reality"].includes(analysisType)) {
       res.status(400).json({
@@ -45,7 +33,6 @@ export async function handleAnalysis(req: Request & { file?: Express.Multer.File
       return;
     }
 
-    // ── Step 1: Extract text from file ──
     const rawText = await extractText(
       file.buffer,
       file.mimetype,
@@ -61,10 +48,8 @@ export async function handleAnalysis(req: Request & { file?: Express.Multer.File
       return;
     }
 
-    // ── Step 2: Preprocess ──
     const resume = preprocessResume(rawText);
 
-    // ── Step 3: Route to service ──
     let response: AnalysisResponse;
 
     switch (analysisType) {
@@ -113,7 +98,6 @@ export async function handleAnalysis(req: Request & { file?: Express.Multer.File
       }
 
       default:
-        // This should be caught by the initial validation, but acts as a safeguard
         return res.status(400).json({
           success: false,
           error: "Invalid analysis type.",

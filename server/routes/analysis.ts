@@ -4,10 +4,9 @@ import { handleAnalysis } from "../controllers/analysisController.js";
 
 const router = Router();
 
-// In-memory file storage (stateless — nothing persisted)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = [
       "application/pdf",

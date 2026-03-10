@@ -65,7 +65,6 @@ function AtsVsHumanPanel({ file }: Props) {
 
       {analysis && (
         <div className="mt-8 space-y-6">
-          {/* Overall Scores */}
           <div className="grid gap-4 sm:grid-cols-2">
             <ScoreCard
               title="ATS Overall"
@@ -91,7 +90,6 @@ function AtsVsHumanPanel({ file }: Props) {
             />
           </div>
 
-          {/* Suggestions */}
           <div className="grid gap-4 sm:grid-cols-2">
             <SuggestionList title="ATS Suggestions" items={analysis.ats.suggestions} color="emerald" />
             <SuggestionList title="Recruiter Suggestions" items={analysis.human.suggestions} color="amber" />

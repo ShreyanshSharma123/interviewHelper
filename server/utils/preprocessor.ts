@@ -1,38 +1,27 @@
 import type { ProcessedResume, JobLevel } from "../types/index.js";
 
-// ─── Skill dictionary (lowercase) ───
 const SKILL_KEYWORDS: string[] = [
-  // Languages
   "javascript", "typescript", "python", "java", "c++", "c#", "go", "rust",
   "ruby", "php", "swift", "kotlin", "scala", "r", "matlab", "perl",
-  // Frontend
   "react", "angular", "vue", "svelte", "next.js", "nextjs", "nuxt",
   "html", "css", "sass", "tailwind", "bootstrap", "webpack", "vite",
-  // Backend
   "node.js", "nodejs", "express", "fastify", "django", "flask", "spring",
   "spring boot", "asp.net", ".net", "rails", "laravel",
-  // Databases
   "sql", "mysql", "postgresql", "postgres", "mongodb", "redis", "dynamodb",
   "sqlite", "oracle", "cassandra", "elasticsearch",
-  // Cloud & DevOps
   "aws", "azure", "gcp", "docker", "kubernetes", "terraform", "jenkins",
   "ci/cd", "github actions", "gitlab ci", "ansible", "nginx", "linux",
-  // Data & ML
   "machine learning", "deep learning", "tensorflow", "pytorch", "pandas",
   "numpy", "scikit-learn", "data analysis", "data science", "nlp",
   "computer vision", "spark", "hadoop",
-  // Tools
   "git", "jira", "figma", "postman", "graphql", "rest", "restful",
   "microservices", "agile", "scrum", "kanban",
-  // Mobile
   "react native", "flutter", "ios", "android",
-  // Other
   "api", "oauth", "jwt", "websocket", "testing", "jest", "mocha",
   "cypress", "selenium", "unit testing", "integration testing",
   "system design", "design patterns", "oop", "functional programming",
 ];
 
-// ─── Common section headings ───
 const SECTION_PATTERNS: Record<string, RegExp> = {
   experience: /\b(experience|work\s*history|employment|professional\s*experience)\b/i,
   education: /\b(education|academic|degree|university|college)\b/i,
@@ -43,14 +32,11 @@ const SECTION_PATTERNS: Record<string, RegExp> = {
   achievements: /\b(achievements?|awards?|honors?|accomplishments?)\b/i,
 };
 
-/**
- * Parse and preprocess raw resume text into a structured representation.
- */
 export function preprocessResume(rawText: string): ProcessedResume {
   const fullText = rawText;
   const cleanText = rawText
     .toLowerCase()
-    .replace(/[^\w\s\.\+\-\#\@]/g, " ") // Keep relevant symbols
+    .replace(/[^\w\s\.\+\-\#\@]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -75,8 +61,6 @@ export function preprocessResume(rawText: string): ProcessedResume {
   };
 }
 
-// ─── Helpers ───
-
 function cleanResumeText(text: string): string {
   return text
     .replace(/\r\n/g, "\n")
@@ -88,7 +72,6 @@ function cleanResumeText(text: string): string {
 function extractSkills(text: string): string[] {
   const lower = text.toLowerCase();
   return SKILL_KEYWORDS.filter((skill) => {
-    // Word-boundary check for short keywords to avoid false positives
     if (skill.length <= 2) {
       const re = new RegExp(`\\b${escapeRegex(skill)}\\b`, "i");
       return re.test(lower);
@@ -98,13 +81,11 @@ function extractSkills(text: string): string[] {
 }
 
 function inferYearsOfExperience(text: string): number {
-  // Pattern: "X years of experience" or "X+ years"
   const directMatch = text.match(
     /(\d{1,2})\+?\s*(?:years?|yrs?)\s*(?:of\s*)?(?:experience|exp)?/i
   );
   if (directMatch) return parseInt(directMatch[1], 10);
 
-  // Try to infer from date ranges (e.g., "2019 - 2023", "Jan 2018 – Present")
   const years: number[] = [];
   const datePattern =
     /(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*)?(\d{4})\s*[-–—to]+\s*(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s*)?(\d{4}|present|current|now)/gi;
@@ -121,7 +102,6 @@ function inferYearsOfExperience(text: string): number {
 
   if (years.length > 0) return Math.max(...years);
 
-  // Fallback: look for graduation year and estimate
   const gradMatch = text.match(/(?:graduated?|class\s*of)\s*(\d{4})/i);
   if (gradMatch) {
     const gradYear = parseInt(gradMatch[1], 10);
@@ -154,7 +134,6 @@ function extractSections(text: string): Record<string, string> {
     let matched = false;
     for (const [name, pattern] of Object.entries(SECTION_PATTERNS)) {
       if (pattern.test(line) && line.trim().length < 60) {
-        // Save previous section
         if (currentContent.length > 0) {
           sections[currentSection] = currentContent.join("\n").trim();
         }
@@ -168,7 +147,6 @@ function extractSections(text: string): Record<string, string> {
       currentContent.push(line);
     }
   }
-  // Save last section
   if (currentContent.length > 0) {
     sections[currentSection] = currentContent.join("\n").trim();
   }
@@ -189,7 +167,6 @@ function extractBulletPoints(text: string): string[] {
 }
 
 function detectQuantifiedImpact(text: string): boolean {
-  // Look for numbers with context: percentages, dollar amounts, user counts, etc.
   return /\d+%|\$\d+|increased|reduced|improved|grew|saved|generated|delivered|managed\s+\d+/i.test(
     text
   );
@@ -207,5 +184,5 @@ function inferEducationLevel(text: string): string | null {
 }
 
 function escapeRegex(string: string): string {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

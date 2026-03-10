@@ -13,10 +13,6 @@ const LEVEL_LABELS: Record<JobLevel, string> = {
   senior: "Senior Level",
 };
 
-/**
- * Uses Gemini to compare the candidate's inferred level with a target role level
- * and return an honest readiness assessment with realistic next steps.
- */
 export async function checkReality(
   resume: ProcessedResume,
   targetLevel: JobLevel

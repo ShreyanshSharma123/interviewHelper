@@ -1,5 +1,3 @@
-// ─── Shared types for the analysis engine ───
-
 export type AnalysisType = "ats" | "interview" | "reality";
 export type JobLevel = "entry" | "mid" | "senior";
 export type FailureReason =
@@ -7,8 +5,6 @@ export type FailureReason =
   | "level_mismatch"
   | "communication"
   | "expectation";
-
-// ─── Request ───
 
 export interface AnalysisRequest {
   resumeText: string;
@@ -20,11 +16,9 @@ export interface AnalysisRequest {
   };
 }
 
-// ─── Preprocessed resume ───
-
 export interface ProcessedResume {
   cleanText: string;
-  fullText: string; // Keep original for context
+  fullText: string;
   skills: string[];
   yearsOfExperience: number;
   candidateLevel: JobLevel;
@@ -34,13 +28,10 @@ export interface ProcessedResume {
   educationLevel: string | null;
 }
 
-// ─── Generic score component ───
 export interface ScoreComponent {
   score: number;
   explanation: string;
 }
-
-// ─── ATS vs Human ───
 
 export interface AtsResult {
   keywordMatch: ScoreComponent;
@@ -63,8 +54,6 @@ export interface AtsHumanResult {
   human: HumanResult;
 }
 
-// ─── Interview Analysis ───
-
 export interface InterviewFailurePoint {
   reason: string;
   advice: string;
@@ -76,16 +65,12 @@ export interface InterviewAnalysisResult {
   behavioral: InterviewFailurePoint[];
 }
 
-// ─── Reality Check ───
-
 export interface RealityCheckResult {
   inferredLevel: string;
   verdict: "Ready" | "Stretching" | "Not Ready";
   explanation: string;
   nextSteps: string[];
 }
-
-// ─── Unified API response ───
 
 export interface AnalysisResponse {
   success: boolean;

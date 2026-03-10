@@ -6,10 +6,6 @@ import type {
 
 const gemini = new GeminiAnalyzer();
 
-/**
- * Uses Gemini to analyze a resume and predict potential reasons for
- * interview failure at different stages, providing targeted advice.
- */
 export async function analyzeInterviewReadiness(
   resume: ProcessedResume
 ): Promise<InterviewAnalysisResult> {

@@ -22,7 +22,6 @@ function App() {
       <Navbar onReset={handleReset} />
 
       <main className="flex-1 w-full max-w-4xl mx-auto px-6 py-10">
-        {/* Step 1: Upload resume */}
         {!file && (
           <section className="mt-12">
             <div className="text-center mb-8">
@@ -38,7 +37,6 @@ function App() {
           </section>
         )}
 
-        {/* Step 2: Choose mode */}
         {file && !mode && (
           <section>
             <UploadedBadge fileName={file.name} onRemove={handleReset} />
@@ -49,7 +47,6 @@ function App() {
           </section>
         )}
 
-        {/* Step 3: Show selected panel */}
         {file && mode && (
           <section>
             <UploadedBadge fileName={file.name} onRemove={handleReset} />

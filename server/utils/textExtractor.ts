@@ -4,10 +4,6 @@ import mammoth from "mammoth";
 const require = createRequire(import.meta.url);
 const { PDFParse } = require("pdf-parse");
 
-/**
- * Extract plain text from an uploaded file buffer based on its mimetype.
- * Supports PDF, DOCX, and plain text fallback.
- */
 export async function extractText(
   buffer: Buffer,
   mimetype: string,
@@ -33,7 +29,6 @@ export async function extractText(
     mimetype === "application/msword" ||
     originalName.endsWith(".doc")
   ) {
-    // .doc (legacy Word) is harder—try mammoth, fall back to raw
     try {
       const result = await mammoth.extractRawText({ buffer });
       return result.value;
@@ -42,6 +37,5 @@ export async function extractText(
     }
   }
 
-  // Fallback: treat as plain text
   return buffer.toString("utf-8");
 }

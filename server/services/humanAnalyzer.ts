@@ -4,11 +4,6 @@ import { cleanAndParseJson } from "../utils/jsonUtils.js";
 
 const gemini = new GeminiAnalyzer();
 
-/**
- * Scores a resume for human-recruiter readability using the Gemini API.
- * Focuses on how a real person would scan and evaluate the resume for clarity,
- * impact, and overall presentation.
- */
 export async function analyzeHumanReadability(
   resume: ProcessedResume
 ): Promise<HumanResult> {
@@ -59,10 +54,6 @@ export async function analyzeHumanReadability(
   }
 }
 
-/**
- * Detect conflicts where ATS-optimized formatting hurts human readability
- * and vice versa.
- */
 export function detectConflicts(
   resume: ProcessedResume,
   atsScore: number,
@@ -70,21 +61,18 @@ export function detectConflicts(
 ): string[] {
   const conflicts: string[] = [];
 
-  // High ATS + low Human
   if (atsScore > 70 && humanScore < 60) {
     conflicts.push(
       "Resume is keyword-heavy which helps ATS but may feel robotic to a recruiter"
     );
   }
 
-  // Low ATS + high Human
   if (atsScore < 60 && humanScore > 70) {
     conflicts.push(
       "Resume reads well for humans but lacks keywords that ATS scanners look for"
     );
   }
 
-  // Bullet length conflict
   if (resume.bulletPoints.length > 0) {
     const avgLen =
       resume.bulletPoints.reduce((s, b) => s + b.length, 0) /
@@ -96,21 +84,18 @@ export function detectConflicts(
     }
   }
 
-  // Skills section density
   if (resume.skills.length > 15) {
     conflicts.push(
       "Large skills list boosts ATS matching but can appear unfocused to a human reviewer"
     );
   }
 
-  // No summary conflict
   if (!resume.sections["summary"] && resume.skills.length >= 5) {
     conflicts.push(
       "Skills are listed but no summary ties them into a narrative — recruiters want context"
     );
   }
 
-  // Quantified impact missing
   if (!resume.hasQuantifiedImpact && resume.bulletPoints.length >= 5) {
     conflicts.push(
       "Multiple bullet points but none have measurable results — both ATS and humans value metrics"

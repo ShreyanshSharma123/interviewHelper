@@ -4,12 +4,6 @@ import { cleanAndParseJson } from "../utils/jsonUtils.js";
 
 const gemini = new GeminiAnalyzer();
 
-/**
- * Analyzes a resume against a job description from an ATS perspective.
- *
- * This function now uses the Gemini API to provide a more nuanced analysis
- * of the resume against the job description.
- */
 export async function analyzeWithATS(
   resume: ProcessedResume
 ): Promise<AtsResult> {
